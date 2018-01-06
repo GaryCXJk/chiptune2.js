@@ -17,6 +17,7 @@ var ChiptuneJsPlayer = function (config) {
   this.currentPlayingNode = null;
   this.handlers = [];
   this.touchLocked = true;
+  this.volume = 100;
 }
 
 ChiptuneJsPlayer.prototype.constructor = ChiptuneJsPlayer;
@@ -97,7 +98,7 @@ ChiptuneJsPlayer.prototype.load = function(input, callback) {
     xhr.open('GET', input, true);
     xhr.responseType = 'arraybuffer';
     xhr.onload = function(e) {
-      if (xhr.status === 200) {
+      if (xhr.status < 400) {
         return callback(xhr.response); // no error
       } else {
         player.fireEvent('onError', {type: 'onxhr'});
@@ -139,6 +140,10 @@ ChiptuneJsPlayer.prototype.togglePause = function() {
 	if (this.currentPlayingNode != null) {
     this.currentPlayingNode.togglePause();
   }
+}
+
+ChiptuneJsPlayer.prototype.setVolume = function(volume) {
+    this.volume = volume;
 }
 
 ChiptuneJsPlayer.prototype.createLibopenmptNode = function(buffer, config) {
@@ -205,6 +210,7 @@ ChiptuneJsPlayer.prototype.createLibopenmptNode = function(buffer, config) {
     var framesRendered = 0;
     var ended = false;
     var error = false;
+    var actualVolume = this.player.volume / 100;
     while (framesToRender > 0) {
       var framesPerChunk = Math.min(framesToRender, maxFramesPerChunk);
       var actualFramesPerChunk = Module._openmpt_module_read_float_stereo(this.modulePtr, this.context.sampleRate, framesPerChunk, this.leftBufferPtr, this.rightBufferPtr);
@@ -216,8 +222,8 @@ ChiptuneJsPlayer.prototype.createLibopenmptNode = function(buffer, config) {
       var rawAudioLeft = Module.HEAPF32.subarray(this.leftBufferPtr / 4, this.leftBufferPtr / 4 + actualFramesPerChunk);
       var rawAudioRight = Module.HEAPF32.subarray(this.rightBufferPtr / 4, this.rightBufferPtr / 4 + actualFramesPerChunk);
       for (var i = 0; i < actualFramesPerChunk; ++i) {
-        outputL[framesRendered + i] = rawAudioLeft[i];
-        outputR[framesRendered + i] = rawAudioRight[i];
+        outputL[framesRendered + i] = rawAudioLeft[i] * actualVolume;
+        outputR[framesRendered + i] = rawAudioRight[i] * actualVolume;
       }
       for (var i = actualFramesPerChunk; i < framesPerChunk; ++i) {
         outputL[framesRendered + i] = 0;
