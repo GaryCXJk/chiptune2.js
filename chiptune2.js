@@ -98,7 +98,7 @@ ChiptuneJsPlayer.prototype.load = function(input, callback) {
     xhr.open('GET', input, true);
     xhr.responseType = 'arraybuffer';
     xhr.onload = function(e) {
-      if (xhr.status === 200 || xhr.responseText !== '') {
+      if (xhr.status === 200 || xhr.statusText === '') {
         return callback(xhr.response); // no error
       } else {
         player.fireEvent('onError', {type: 'onxhr'});
